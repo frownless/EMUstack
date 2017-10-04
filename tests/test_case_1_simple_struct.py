@@ -1,4 +1,23 @@
 """
+    test_case_simple_struct.py is a simulation example for EMUstack.
+
+    Copyright (C) 2015  Bjorn Sturmberg, Kokou Dossou, Felix Lawrence
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""
+
+"""
 Test simulation of a relatively simple structure;
 a dilute silicon nanowire array.
 Uses .mail file from repository (to avoid meshing discrepancies).
@@ -20,20 +39,20 @@ from numpy.testing import assert_allclose as assert_ac
 from numpy.testing import assert_equal
 
 # Remove results of previous simulations
-plotting.clear_previous('.txt')
-plotting.clear_previous('.pdf')
+plotting.clear_previous()
 
 ################ Light parameters #####################
 
 # Set up light objects
 wavelengths = np.array([500, 1000])
-light_list  = [objects.Light(wl, max_order_PWs = 2) for wl in wavelengths]
+light_list  = [objects.Light(wl, max_order_PWs = 2, theta = 0.0, phi = 0.0) \
+    for wl in wavelengths]
 
 
 
 ################ Scattering matrices (for distinct layers) ##############
 """ Calculate scattering matrices for each distinct layer.
-Calculated in the order listed below, however this does not influence final 
+Calculated in the order listed below, however this does not influence final
 structure which is defined later
 """
 
@@ -41,31 +60,31 @@ structure which is defined later
 period  = 600
 
 NW_diameter = 120
-num_BM = 40
+num_BMs = 40
 NW_array = objects.NanoStruct('2D_array', period, NW_diameter, height_nm = 2330,
     inclusion_a = materials.Si_c, background = materials.Air,
-    loss = True, make_mesh_now = False, mesh_file='600_120.mail')
+    loss = True, make_mesh_now = False, mesh_file='4testing-600_120.mail')
 
 superstrate  = objects.ThinFilm(period = period, height_nm = 'semi_inf',
     material = materials.Air, loss = False)
 
 substrate = objects.ThinFilm(period = period, height_nm = 'semi_inf',
-    material = materials.SiO2_a, loss = False)
+    material = materials.SiO2, loss = False)
 
 
 
 
 stack_list = []
 def simulate_stack(light):
-    
+
     ################ Evaluate each layer individually ##############
     sim_superstrate = superstrate.calc_modes(light)
-    sim_NW_array = NW_array.calc_modes(light, num_BM = num_BM)
+    sim_NW_array = NW_array.calc_modes(light, num_BMs = num_BMs)
     sim_substrate = substrate.calc_modes(light)
 
     ################ Evaluate full solar cell structure ##############
     """ Now when defining full structure order is critical and
-    solar_cell list MUST be ordered from bottom to top!
+    stack list MUST be ordered from bottom to top!
     """
     stack = Stack((sim_substrate, sim_NW_array, sim_superstrate))
     stack.calc_scat(pol = 'TE')
@@ -80,12 +99,7 @@ def setup_module(module):
     pool = Pool(2)
     module.stack_list = pool.map(simulate_stack, light_list)
 
-    last_light_object = light_list.pop()
-    param_layer = NW_array # Specify the layer for which the parameters should be printed on figures.
-    params_string = plotting.gen_params_string(param_layer, last_light_object, max_num_BMs=num_BM)
-    active_layer_nu = 1
-    Efficiency = plotting.t_r_a_plots(stack_list, wavelengths, params_string, 
-        active_layer_nu=active_layer_nu)
+    plotting.t_r_a_plots(stack_list, save_txt=True)
 
 
     # # SAVE DATA AS REFERENCE

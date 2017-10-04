@@ -1,7 +1,26 @@
 """
+    test_case_0_thin_film_multistack.py is a simulation example for EMUstack.
+
+    Copyright (C) 2015  Bjorn Sturmberg, Kokou Dossou, Felix Lawrence
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""
+
+"""
 Test simulation of a very simple structure;
 a stack of lossy homogeneous dielectric films.
-NOTE: This calculation is entirely analytical & should produce excellent 
+NOTE: This calculation is entirely analytical & should produce excellent
 agreement on all machines.
 """
 
@@ -28,12 +47,12 @@ wl_1     = 400
 wl_2     = 1000
 no_wl_1  = 3
 wavelengths = np.linspace(wl_1, wl_2, no_wl_1)
-light_list  = [objects.Light(wl, max_order_PWs = 1) for wl in wavelengths]
+light_list  = [objects.Light(wl, max_order_PWs = 1, theta = 0.0, phi = 0.0) for wl in wavelengths]
 
 
 ################ Scattering matrices (for distinct layers) ##############
 """ Calculate scattering matrices for each distinct layer.
-Calculated in the order listed below, however this does not influence final 
+Calculated in the order listed below, however this does not influence final
 structure which is defined later
 """
 
@@ -58,7 +77,7 @@ substrate   = objects.ThinFilm(period = period, height_nm = 'semi_inf',
 stack_list = []
 
 def simulate_stack(light):
-    
+
     ################ Evaluate each layer individually ##############
     sim_superstrate = superstrate.calc_modes(light)
     sim_homo_film1  = homo_film1.calc_modes(light)
@@ -81,20 +100,9 @@ def setup_module(module):
     # This has to be in a setup_module otherwise nosetests will crash :(
     pool = Pool(3)
     module.stack_list = pool.map(simulate_stack, light_list)
-    # # Run one at a time
-    # module.stack_list = map(simulate_stack, light_list)
-
-
-    last_light_object = light_list.pop()
-    param_layer = homo_film2 # Specify the layer for which the parameters should be printed on figures.
-    params_string = plotting.gen_params_string(param_layer, last_light_object)
 
     active_layer_nu = 3 # Specify which layer is the active one (where absorption generates charge carriers).
-    # Plot total transmission, reflection, absorption & that of each layer. 
-    # Also calculate efficiency of active layer.
-    Efficiency = plotting.t_r_a_plots(stack_list, wavelengths, params_string, 
-        active_layer_nu=active_layer_nu) 
-
+    plotting.t_r_a_plots(stack_list, active_layer_nu=active_layer_nu, save_txt=True)
 
 
     # # SAVE DATA AS REFERENCE

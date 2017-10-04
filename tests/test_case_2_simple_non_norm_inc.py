@@ -1,4 +1,23 @@
 """
+    test_case_2_simple_non_norm_inc.py is a simulation example for EMUstack.
+
+    Copyright (C) 2015  Bjorn Sturmberg, Kokou Dossou, Felix Lawrence
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""
+
+"""
 Test simulation of a relatively simple structure;
 a dilute silicon nanowire array, at non-normal incidence.
 Uses .mail file from repository (to avoid meshing discrepancies).
@@ -23,13 +42,13 @@ def setup_module(module):
     # Set up light objects
     wl_super =  500.0
     wavelengths = np.array([wl_super])
-    light_list  = [objects.Light(wl, theta = 20, phi = 40, max_order_PWs = 1) for wl in wavelengths]
+    light_list  = [objects.Light(wl, max_order_PWs = 1, theta = 20, phi = 40) for wl in wavelengths]
     light = light_list[0]
 
 
     ################ Scattering matrices (for distinct layers) ##############
     """ Calculate scattering matrices for each distinct layer.
-    Calculated in the order listed below, however this does not influence final 
+    Calculated in the order listed below, however this does not influence final
     structure which is defined later
     """
 
@@ -37,18 +56,18 @@ def setup_module(module):
     period  = 600
 
     NW_diameter = 120
-    num_BM = 20
+    num_BMs = 20
     NW_array = objects.NanoStruct('2D_array', period, NW_diameter, height_nm = 2330,
         inclusion_a = materials.Si_c, background = materials.Air,
-        loss = True, make_mesh_now = False, mesh_file='600_120.mail')
-    sim_NW_array = NW_array.calc_modes(light, num_BM = num_BM)
+        loss = True, make_mesh_now = False, mesh_file='4testing-600_120.mail')
+    sim_NW_array = NW_array.calc_modes(light, num_BMs = num_BMs)
 
     superstrate  = objects.ThinFilm(period = period, height_nm = 'semi_inf',
         material = materials.Air, loss = False)
     sim_superstrate = superstrate.calc_modes(light)
 
     substrate = objects.ThinFilm(period = period, height_nm = 'semi_inf',
-        material = materials.SiO2_a, loss = False)
+        material = materials.SiO2, loss = False)
     sim_substrate = substrate.calc_modes(light)
 
 
@@ -61,10 +80,6 @@ def setup_module(module):
     stack.calc_scat()
     module.stack_list = [stack]
 
-    last_light_object = light_list.pop()
-    param_layer = NW_array # Specify the layer for which the parameters should be printed on figures.
-    params_string = plotting.gen_params_string(param_layer, last_light_object, max_num_BMs=num_BM)
-    active_layer_nu = 1
     plotting.t_r_a_write_files(stack_list, wavelengths)
 
 
